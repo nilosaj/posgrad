@@ -17,6 +17,9 @@
   },
   "homepage": "",
   "dependencies": {
-    "sqlite3": "^3.1.8"
+    "async": "^2.4.1",
+    "sqlite3": "^3.1.8",
+    "xmldom": "^0.1.27",
+    "xpath": "0.0.24"
   }
 }
