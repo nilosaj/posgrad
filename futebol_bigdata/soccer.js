@@ -58,7 +58,9 @@ exports.consultaPontuacaoFinal = function consultaPontuacaoFinal(temporada,idPai
                 var times = [];
                 async.eachSeries(rows,function(teste,callback){
                     rows.forEach(function(row){
-                                var saida = capturaInfoCasa(row.teamId,row.teamName,row.score,idPais,temporada);
+                        console.log("LOCAL;ID_LIGA;TEMPORADA;ID_TIME;NOME_TIME;PONTOS;CHUTES_NO_GOL_MEDIA;CRUZAMENTOS_MEDIA;ESCANTEIOS__MEDIA;POSSE_MEDIA")
+                                 capturaInfoCasa(row.teamId,row.teamName,row.score,idPais,temporada);
+                                 capturaInfoFora(row.teamId,row.teamName,row.score,idPais,temporada);
                                 
                                // console.log("["+row.teamId+"]   " + row.teamName + "  ("+row.score+")  ") 
                     });  
@@ -94,11 +96,11 @@ exports.consultaPontuacaoFinal = function consultaPontuacaoFinal(temporada,idPai
                      rows.forEach(function(row){
                          
                                 var docshot = new dom().parseFromString(row.shoton);
-                                var shot = xpath.select("sum(/shoton/value/stats/shoton)", docshot);
+                                var shot = xpath.select("sum(/shoton/value[team ='"+teamId+"']/stats/shoton)", docshot);
                                 chutes = chutes + shot;
                                 
                                 var doccross = new dom().parseFromString(row.cross);
-                                var  cross =+ xpath.select("sum(/cross/value/stats/crosses)", doccross);
+                                var  cross =+ xpath.select("sum(/cross/value[team ='"+teamId+"']/stats/crosses)", doccross);
                                 cruzamentos= cruzamentos +cross;
                                 
                                 var docposse = new dom().parseFromString(row.possession);
@@ -110,7 +112,7 @@ exports.consultaPontuacaoFinal = function consultaPontuacaoFinal(temporada,idPai
                                     posse = posse + 50;
                                 }
                                 var doccorner = new dom().parseFromString(row.corner);
-                                var corner =+ xpath.select("sum(/corner/value/stats/corners)", doccorner);
+                                var corner =+ xpath.select("sum(/corner/value[team ='"+teamId+"']/stats/corners)", doccorner);
                                 escanteios = escanteios + corner;
                             // console.log("["+teamId+"] chutes="+shot )//+"  cruzamentos="+cross+"  posse="+possession+" escanteio="+corner )
                                 
@@ -118,7 +120,7 @@ exports.consultaPontuacaoFinal = function consultaPontuacaoFinal(temporada,idPai
 
                            
                         });
-                         var valores = "CASA"+idPais+";"+season+";"+teamId+";"+teamName+";"+score+";"+chutes+";"+cruzamentos+";"+Math.round(posse/18)+";"+escanteios
+                         var valores = "CASA;"+idPais+";"+season+";"+teamId+";"+teamName+";"+score+";"+Math.round(chutes/19)+";"+Math.round(cruzamentos/19)+";"+Math.round(escanteios/19)+";"+Math.round(posse/19);
                             console.log(valores) 
 
                                
@@ -129,7 +131,7 @@ exports.consultaPontuacaoFinal = function consultaPontuacaoFinal(temporada,idPai
   
 }
 
-function capturaInfoCasa(teamId ,teamName, score ,idPais,season){
+function capturaInfoFora(teamId ,teamName, score ,idPais,season){
     var chutes =0;
     var cruzamentos =0;
     var escanteios =0;
@@ -141,20 +143,23 @@ function capturaInfoCasa(teamId ,teamName, score ,idPais,season){
                console.log(err)
            }
 
+          
             async.eachSeries(rows,function(teste,callback){
-
+                    //console.log(rows.length)
                      rows.forEach(function(row){
-                         
-                                var docshot = new dom().parseFromString(row.shoton);
-                                var shot = xpath.select("sum(/shoton/value/stats/shoton)", docshot);
-                                chutes = chutes + shot;
                                 
+                                 //atributo teamId usado para definio home
+                                var docshot = new dom().parseFromString(row.shoton);
+                                var shot = xpath.select("sum(/shoton/value[team ='"+teamId+"']/stats/shoton)", docshot);
+                                chutes = chutes + shot;
+                                //atributo teamId usado para definio home
                                 var doccross = new dom().parseFromString(row.cross);
-                                var  cross =+ xpath.select("sum(/cross/value/stats/crosses)", doccross);
+                                var  cross =+ xpath.select("sum(/cross/value[team ='"+teamId+"']/stats/crosses)", doccross);
                                 cruzamentos= cruzamentos +cross;
                                 
+                                //identifica home atraves da tag homepos
                                 var docposse = new dom().parseFromString(row.possession);
-                                var possession =+ xpath.select("(/possession/value[elapsed='90']/homepos/text())", docposse);
+                                var possession =+ xpath.select("(/possession/value[elapsed='90']/awaypos/text())", docposse);
                                 
                                 if (possession > 0) {
                                     posse = posse + possession
@@ -162,7 +167,7 @@ function capturaInfoCasa(teamId ,teamName, score ,idPais,season){
                                     posse = posse + 50;
                                 }
                                 var doccorner = new dom().parseFromString(row.corner);
-                                var corner =+ xpath.select("sum(/corner/value/stats/corners)", doccorner);
+                                var corner =+ xpath.select("sum(/corner/value[team ='"+teamId+"']/stats/corners)", doccorner);
                                 escanteios = escanteios + corner;
                             // console.log("["+teamId+"] chutes="+shot )//+"  cruzamentos="+cross+"  posse="+possession+" escanteio="+corner )
                                 
@@ -170,7 +175,7 @@ function capturaInfoCasa(teamId ,teamName, score ,idPais,season){
 
                            
                         });
-                         var valores = "CASA"+idPais+";"+season+";"+teamId+";"+teamName+";"+score+";"+chutes+";"+cruzamentos+";"+Math.round(posse/18)+";"+escanteios
+                         var valores = "FORA;"+idPais+";"+season+";"+teamId+";"+teamName+";"+score+";"+Math.round(chutes/19)+";"+Math.round(cruzamentos/19)+";"+Math.round(escanteios)/19+";"+Math.round(posse/19);
                             console.log(valores) 
 
                                
@@ -180,3 +185,9 @@ function capturaInfoCasa(teamId ,teamName, score ,idPais,season){
     })
   
 }
+
+
+
+
+
+
