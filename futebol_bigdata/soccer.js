@@ -84,6 +84,7 @@ exports.consultaPontuacaoFinal = function consultaPontuacaoFinal(temporada,idPai
     var cruzamentos =0;
     var escanteios =0;
     var posse = 0;
+    var posicao = 0;
     
     dbfutebol.serialize(function(){
         dbfutebol.all("select shoton,cross , possession ,corner  from Match where league_id = "+idPais+"  and home_team_api_id ="+teamId+" and season = '"+season+"' ",function(err,rows){
@@ -94,7 +95,7 @@ exports.consultaPontuacaoFinal = function consultaPontuacaoFinal(temporada,idPai
             async.eachSeries(rows,function(teste,callback){
 
                      rows.forEach(function(row){
-                         
+
                                 var docshot = new dom().parseFromString(row.shoton);
                                 var shot = xpath.select("sum(/shoton/value[team ='"+teamId+"']/stats/shoton)", docshot);
                                 chutes = chutes + shot;
@@ -120,7 +121,7 @@ exports.consultaPontuacaoFinal = function consultaPontuacaoFinal(temporada,idPai
 
                            
                         });
-                         var valores = "CASA;"+idPais+";"+season+";"+teamId+";"+teamName+";"+score+";"+Math.round(chutes/19)+";"+Math.round(cruzamentos/19)+";"+Math.round(escanteios/19)+";"+Math.round(posse/19);
+                         var valores = idPais+";"+season+";"+teamId+";"+teamName+";"+score+";"+Math.round(chutes/19)+";"+Math.round(cruzamentos/19)+";"+Math.round(escanteios/19)+";"+Math.round(posse/19);
                             console.log(valores) 
 
                                
@@ -175,7 +176,7 @@ function capturaInfoFora(teamId ,teamName, score ,idPais,season){
 
                            
                         });
-                         var valores = "FORA;"+idPais+";"+season+";"+teamId+";"+teamName+";"+score+";"+Math.round(chutes/19)+";"+Math.round(cruzamentos/19)+";"+Math.round(escanteios)/19+";"+Math.round(posse/19);
+                         var valores = ";"+Math.round(chutes/19)+";"+Math.round(cruzamentos/19)+";"+Math.round(escanteios)/19+";"+Math.round(posse/19);
                             console.log(valores) 
 
                                
