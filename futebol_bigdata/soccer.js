@@ -29,16 +29,16 @@ exports.TabelaJogos = function consultaTabelaJogos(temporada){
 exports.consultaPontuacaoFinal = function consultaPontuacaoFinal(temporada,idPais){
     dbfutebol.serialize(function(){
         dbfutebol.all(
-    "  select  Tabela.home_team_api_id as teamId, Team.team_long_name as teamName, Tabela.score as score ,Tabela.Home_shootsIn as home_shoots,Tabela.Home_cross ,Tabela.Home_possession,Tabela.Home_corner ,Tabela.Away_shootsIn,Tabela.Away_cross , Tabela.Away_possession,Tabela.Away_corner   from   "+
-    "  (select H.home_team_api_id , H.home+A.Away as score , H.shoton as Home_shootsIn,H.cross as Home_cross , H.possession as Home_possession,H.corner as Home_corner , A.shoton as Away_shootsIn,A.cross as Away_cross , A.possession as Away_possession,A.corner as Away_corner    from     "+
-    "      (select home_team_api_id , shoton ,cross , possession,corner , sum(point_home) as home from  "+
+    "  select  Tabela.home_team_api_id as teamId, Team.team_long_name as teamName, Tabela.score as score , Tabela.gols_pro as gols_pro , Tabela.gols_against as gols_against ,Tabela.Home_shootsIn as home_shoots,Tabela.Home_cross ,Tabela.Home_possession,Tabela.Home_corner ,Tabela.Away_shootsIn,Tabela.Away_cross , Tabela.Away_possession,Tabela.Away_corner   from   "+
+    "  (select H.home_team_api_id , H.home+A.Away as score , H.gols_casa+A.gols_visitante as gols_pro, H.gols_visitante+A.gols_casa as gols_against  , H.shoton as Home_shootsIn,H.cross as Home_cross , H.possession as Home_possession,H.corner as Home_corner , A.shoton as Away_shootsIn,A.cross as Away_cross , A.possession as Away_possession,A.corner as Away_corner    from     "+
+    "      (select home_team_api_id , shoton ,cross , possession,corner , sum(point_home) as home , sum(home_team_goal) as gols_casa , sum(away_team_goal) as gols_visitante from  "+
     "          (select  id , country_id , league_id , season , stage , date , match_api_id , home_team_api_id , away_team_api_id ,home_team_goal , away_team_goal, shoton ,cross , possession,corner ,    "+
     "           CASE WHEN home_team_goal > away_team_goal THEN 3      "+
     "                WHEN home_team_goal < away_team_goal THEN 0      "+
     "                WHEN home_team_goal == away_team_goal THEN 1     "+
     "                END AS 'point_home'  from    "+
-    "                  Match where season = '"+temporada+"' and league_id = 1729 ) group by home_team_api_id  ) H ,   "+
-    "      (select away_team_api_id , shoton ,cross , possession,corner, sum(point_away) as away from    "+
+    "                  Match where season = '"+temporada+"' and league_id = "+idPais+" ) group by home_team_api_id  ) H ,   "+
+    "      (select away_team_api_id , shoton ,cross , possession,corner, sum(point_away) as away , sum(home_team_goal) as gols_casa , sum(away_team_goal) as gols_visitante from    "+
     "          (  select  id , country_id , league_id , season , stage , date , match_api_id , home_team_api_id , away_team_api_id ,home_team_goal , away_team_goal ,  shoton,cross , possession,corner ,    "+
     "           CASE WHEN home_team_goal < away_team_goal THEN 3     "+
     "                WHEN home_team_goal > away_team_goal THEN 0     "+
@@ -58,8 +58,8 @@ exports.consultaPontuacaoFinal = function consultaPontuacaoFinal(temporada,idPai
                 var times = [];
                 async.eachSeries(rows,function(teste,callback){
                     rows.forEach(function(row){
-                        console.log("LOCAL;ID_LIGA;TEMPORADA;ID_TIME;NOME_TIME;PONTOS;CHUTES_NO_GOL_MEDIA;CRUZAMENTOS_MEDIA;ESCANTEIOS__MEDIA;POSSE_MEDIA")
-                                 capturaInfoCasa(row.teamId,row.teamName,row.score,idPais,temporada);
+                        
+                                 capturaInfoCasa(row.teamId,row.teamName,row.score,row.gols_pro,row.gols_against,idPais,temporada);
                                  capturaInfoFora(row.teamId,row.teamName,row.score,idPais,temporada);
                                 
                                // console.log("["+row.teamId+"]   " + row.teamName + "  ("+row.score+")  ") 
@@ -79,7 +79,7 @@ exports.consultaPontuacaoFinal = function consultaPontuacaoFinal(temporada,idPai
 
 
 
- function capturaInfoCasa(teamId ,teamName, score ,idPais,season){
+ function capturaInfoCasa(teamId ,teamName, score ,golspro , golsagainst,idPais,season){
     var chutes =0;
     var cruzamentos =0;
     var escanteios =0;
@@ -97,7 +97,7 @@ exports.consultaPontuacaoFinal = function consultaPontuacaoFinal(temporada,idPai
                      rows.forEach(function(row){
 
                                 var docshot = new dom().parseFromString(row.shoton);
-                                var shot = xpath.select("sum(/shoton/value[team ='"+teamId+"']/stats/shoton)", docshot);
+                                var shot = xpath.select("count(/shoton/value[team ='"+teamId+"']/stats)", docshot);
                                 chutes = chutes + shot;
                                 
                                 var doccross = new dom().parseFromString(row.cross);
@@ -121,7 +121,7 @@ exports.consultaPontuacaoFinal = function consultaPontuacaoFinal(temporada,idPai
 
                            
                         });
-                         var valores = idPais+";"+season+";"+teamId+";"+teamName+";"+score+";"+Math.round(chutes/19)+";"+Math.round(cruzamentos/19)+";"+Math.round(escanteios/19)+";"+Math.round(posse/19);
+                         var valores = idPais+";"+season+";"+teamId+";"+teamName+";"+score+";"+ Math.round(golspro)+";"+Math.round(golsagainst/19)+";"+Math.round(chutes/19)+";"+Math.round(cruzamentos/19)+";"+Math.round(escanteios/19)+";"+Math.round(posse/19);
                             console.log(valores) 
 
                                
@@ -151,7 +151,7 @@ function capturaInfoFora(teamId ,teamName, score ,idPais,season){
                                 
                                  //atributo teamId usado para definio home
                                 var docshot = new dom().parseFromString(row.shoton);
-                                var shot = xpath.select("sum(/shoton/value[team ='"+teamId+"']/stats/shoton)", docshot);
+                                var shot = xpath.select("count(/shoton/value[team ='"+teamId+"']/stats)", docshot);
                                 chutes = chutes + shot;
                                 //atributo teamId usado para definio home
                                 var doccross = new dom().parseFromString(row.cross);
@@ -170,7 +170,7 @@ function capturaInfoFora(teamId ,teamName, score ,idPais,season){
                                 var doccorner = new dom().parseFromString(row.corner);
                                 var corner =+ xpath.select("sum(/corner/value[team ='"+teamId+"']/stats/corners)", doccorner);
                                 escanteios = escanteios + corner;
-                            // console.log("["+teamId+"] chutes="+shot )//+"  cruzamentos="+cross+"  posse="+possession+" escanteio="+corner )
+                             //console.log("["+teamId+"] chutes="+shot )//+"  cruzamentos="+cross+"  posse="+possession+" escanteio="+corner )
                                 
                             //console.log("quantidade atual de -  chutes :"+chutes+"  cruzamentos:"+cruzamentos +" escanteios:"+escanteios+"  posse:"+(posse))
 
